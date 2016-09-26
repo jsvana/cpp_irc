@@ -46,6 +46,7 @@ class lockless_queue {
 
 class irc_socket {
  private:
+  // TODO(jsvana): actually use this
   bool ssl_;
   std::string host_;
   std::string port_;
@@ -57,8 +58,10 @@ class irc_socket {
 
   std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>> socket_;
 
+  const std::string LINE_SEP = "\r\n";
+
  public:
-  irc_socket(const std::string &host, const std::string &port, lockless_queue<std::string> *read_q) : host_(host), port_(port), read_q_(read_q) {
+  irc_socket(const std::string &host, const std::string &port, lockless_queue<std::string> *read_q, bool ssl = false) : host_(host), port_(port), read_q_(read_q), ssl_(true) {
   }
 
   bool connect() {
@@ -91,14 +94,20 @@ class irc_socket {
   }
 
   void run() {
-    boost::asio::async_read_until(*socket_, response_, "\r\n", boost::bind(&irc_socket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+    boost::asio::async_read_until(*socket_, response_, LINE_SEP, boost::bind(&irc_socket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
     io_service_.run();
   }
 
   void write(const std::string &message) {
     std::cout << "WRITE " << message << std::endl;
-    boost::asio::write(*socket_, boost::asio::buffer(message));
+    boost::asio::write(*socket_, boost::asio::buffer(message + LINE_SEP));
+  }
+
+  void write_lines(const std::vector<std::string> &lines) {
+    for (const auto &line : lines) {
+      write(line);
+    }
   }
 
   void read(const boost::system::error_code &error, std::size_t bytes_transferred) {
@@ -126,9 +135,10 @@ class irc_socket {
 };
 
 void dispatcher(irc_socket &sock) {
-  std::string req = "USER jsvana 0.0.0.0 0.0.0.0 :jsvana test\r\n"
-    "NICK jsvana\r\n";
-  sock.write(req);
+  sock.write_lines({
+    "USER jsvana 0.0.0.0 0.0.0.0 :jsvana test",
+    "NICK jsvana",
+  });
 
   auto read = sock.read_queue();
   while (true) {
