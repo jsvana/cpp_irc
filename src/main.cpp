@@ -46,11 +46,11 @@ class lockless_queue {
 
 class irc_socket {
  private:
-  // TODO(jsvana): actually use this
-  bool ssl_;
   std::string host_;
   std::string port_;
   lockless_queue<std::string> *read_q_;
+  // TODO(jsvana): actually use this
+  bool ssl_;
 
   boost::asio::streambuf response_;
 
@@ -61,7 +61,7 @@ class irc_socket {
   const std::string LINE_SEP = "\r\n";
 
  public:
-  irc_socket(const std::string &host, const std::string &port, lockless_queue<std::string> *read_q, bool ssl = false) : host_(host), port_(port), read_q_(read_q), ssl_(true) {
+  irc_socket(const std::string &host, const std::string &port, lockless_queue<std::string> *read_q, bool ssl = false) : host_(host), port_(port), read_q_(read_q), ssl_(ssl) {
   }
 
   bool connect() {
@@ -110,7 +110,7 @@ class irc_socket {
     }
   }
 
-  void read(const boost::system::error_code &error, std::size_t bytes_transferred) {
+  void read(const boost::system::error_code &error, std::size_t) {
     if (error) {
       close();
       return;
