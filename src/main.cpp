@@ -19,11 +19,7 @@ void dispatcher(IrcSocket &sock) {
     Message message(line);
 
     std::cout << message.prefix().server() << std::endl;
-    if (message.command().type() == COMMAND_NUMBER) {
-      std::cout << message.command().number() << std::endl;
-    } else {
-      std::cout << message.command().string() << std::endl;
-    }
+    std::cout << message.command() << std::endl;
   }
 }
 
