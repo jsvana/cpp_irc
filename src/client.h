@@ -1,5 +1,6 @@
 #pragma once
 
+#include "channel.h"
 #include "irc_socket.h"
 #include "message.h"
 
@@ -19,7 +20,7 @@ class Client {
 
   const std::vector<std::function<void(Client &, const Message &)>> EMPTY_CALLBACKS;
 
-  std::set<std::string> channels_;
+  std::map<std::string, Channel> channels_;
 
   void setup_callbacks();
 
@@ -52,12 +53,13 @@ class Client {
     sock_->write_lines(lines);
   }
 
-  void add_channel(const std::string &channel) { channels_.insert(channel); }
-  void rm_channel(const std::string &channel) { channels_.erase(channel); }
+  Channel *get_channel(const std::string &channel);
+
+  void add_channel(const std::string &channel) { channels_.emplace(std::make_pair(channel, Channel(channel))); }
 
   const std::vector<std::function<void(Client &, const Message &)>> &callbacks_for_command(const std::string &command);
 
-  const std::set<std::string> &channels() { return channels_; }
+  const std::map<std::string, Channel> &channels() { return channels_; }
 
   Message read();
 };

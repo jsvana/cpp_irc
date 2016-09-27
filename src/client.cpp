@@ -41,6 +41,11 @@ const std::vector<std::function<void(Client &, const Message &)>> &Client::callb
 }
 
 void Client::setup_callbacks() {
+  // ISUPPORT (doubling as connected)
+  add_callback("005", [](Client &client, const Message &) {
+    client.write("JOIN #encoded-test");
+  });
+
   // Nick in use
   add_callback("433", [](Client &client, const Message &) {
     if (client.nick_choices.empty()) {
@@ -58,11 +63,41 @@ void Client::setup_callbacks() {
     if (message.prefix().entity() == client.nick()) {
       client.add_channel(message.params()[0]);
       std::cout << "Active channels:";
-      for (const auto &chan : client.channels()) {
-        std::cout << " " << chan;
+      for (const auto &p : client.channels()) {
+        std::cout << " " << p.first;
       }
       std::cout << std::endl;
     }
+  });
+
+  // Topic
+  add_callback("332", [](Client &client, const Message &message) {
+    auto channel = client.get_channel(message.params()[1]);
+    channel->set_topic(message.params()[2]);
+  });
+
+  // Names
+  add_callback("353", [](Client &client, const Message &message) {
+    auto channel = client.get_channel(message.params()[2]);
+    auto nicks_str = message.params()[3];
+    std::set<std::string> nicks;
+
+    std::size_t i = 0;
+    std::size_t end;
+    while (i < nicks_str.length()) {
+      end = nicks_str.find(' ', i);
+      nicks.insert(nicks_str.substr(i, end - i));
+      i = end + 1;
+    }
+    channel->add_nicks(nicks);
+
+    std::cout << "CHANNEL " << channel->name() << ":" << std::endl;
+    std::cout << "  TOPIC: " << channel->topic() << std::endl;
+    std::cout << "  NICKS:";
+    for (const auto &nick : channel->nicks()) {
+      std::cout << " " << nick;
+    }
+    std::cout << std::endl;
   });
 }
 
@@ -74,6 +109,16 @@ void Client::run() {
   sock_->run();
 
   dispatcher_thread.join();
+}
+
+Channel *Client::get_channel(const std::string &channel) {
+  auto iter = channels_.find(channel);
+  if (iter != channels_.end()) {
+    return &iter->second;
+  }
+
+  channels_.emplace(std::make_pair(channel, Channel(channel)));
+  return &channels_.find(channel)->second;
 }
 
 Message Client::read() {
