@@ -4,10 +4,8 @@
 #include <iostream>
 
 void dispatcher(Client &client) {
-  client.write_lines({
-    "USER jsvana 0.0.0.0 0.0.0.0 :jsvana test",
-    "NICK " + client.nick_choices.front(),
-  });
+  client.write("USER jsvana 0.0.0.0 0.0.0.0 :jsvana test");
+  client.nick(client.nick_choices.front());
 
   while (true) {
     auto message = client.read();
@@ -79,7 +77,7 @@ void Client::setup_callbacks() {
       }
     }
 
-    client.write("JOIN #encoded-test");
+    client.join("#encoded-test");
   });
 
   // Nick in use
@@ -88,7 +86,7 @@ void Client::setup_callbacks() {
       throw "Out of nick choices";
     }
     client.nick_choices.pop();
-    client.write("NICK " + client.nick_choices.front());
+    client.nick(client.nick_choices.front());
   });
 
   add_callback("PING", [](Client &client, const Message &message) {
@@ -104,6 +102,8 @@ void Client::setup_callbacks() {
       }
       std::cout << std::endl;
     }
+
+    client.channel_message("#encoded-test", "test message woo");
   });
 
   // Topic
@@ -165,6 +165,25 @@ Channel *Client::get_channel(const std::string &channel) {
 
   channels_.emplace(std::make_pair(channel, Channel(channel)));
   return &channels_.find(channel)->second;
+}
+
+void Client::join(const std::string &channel) {
+  write("JOIN " + channel);
+}
+
+void Client::nick(const std::string &nick) {
+  write("NICK " + nick);
+}
+
+bool Client::channel_message(const std::string &channel, const std::string &message) {
+  auto iter = channels_.find(channel);
+  if (iter == channels_.end()) {
+    std::cerr << "Unknown channel \"" << channel << "\"" << std::endl;
+    return false;
+  }
+
+  write("PRIVMSG " + channel + " :" + message);
+  return true;
 }
 
 Message Client::read() {

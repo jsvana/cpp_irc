@@ -66,5 +66,10 @@ class Client {
 
   const std::map<std::string, Channel> &channels() { return channels_; }
 
+  void join(const std::string &channel);
+  void nick(const std::string &nick);
+
+  bool channel_message(const std::string &channel, const std::string &message);
+
   Message read();
 };
