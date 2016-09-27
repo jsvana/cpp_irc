@@ -32,13 +32,13 @@ bool IrcSocket::connect() {
 }
 
 void IrcSocket::run() {
-  boost::asio::async_read_until(*socket_, response_, LINE_SEP, boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  socket_->async_read_some(boost::asio::buffer(buffer_), boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
   io_service_.run();
 }
 
 void IrcSocket::write(const std::string &message) {
-  std::cout << "WRITE " << message << std::endl;
+  std::cout << "SEND " << message << std::endl;
   boost::asio::write(*socket_, boost::asio::buffer(message + LINE_SEP));
 }
 
@@ -48,18 +48,15 @@ void IrcSocket::write_lines(const std::vector<std::string> &lines) {
   }
 }
 
-void IrcSocket::read(const boost::system::error_code &error, std::size_t) {
+void IrcSocket::read(const boost::system::error_code &error, std::size_t bytes) {
   if (error) {
     close();
     return;
   }
 
-  std::istream response_stream(&response_);
-  std::string line;
-  while (std::getline(response_stream, line)) {
-    read_q_.push(line);
-  }
-  boost::asio::async_read_until(*socket_, response_, "\r\n", boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  std::string data(buffer_.data(), bytes);
+  read_q_.push(data);
+  socket_->async_read_some(boost::asio::buffer(buffer_), boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 }
 
 void IrcSocket::close() {

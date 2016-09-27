@@ -3,11 +3,11 @@
 #include "irc_socket.h"
 #include "message.h"
 
-#include <iostream>
 #include <functional>
 #include <map>
 #include <memory>
 #include <queue>
+#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -18,6 +18,12 @@ class Client {
   std::map<std::string, std::vector<std::function<void(Client &, const Message &)>>> callbacks_;
 
   const std::vector<std::function<void(Client &, const Message &)>> EMPTY_CALLBACKS;
+
+  std::set<std::string> channels_;
+
+  void setup_callbacks();
+
+  std::string unfinished_line_;
 
  public:
   std::queue<std::string> nick_choices;
@@ -32,6 +38,8 @@ class Client {
     }
   }
 
+  const std::string &nick() const { return nick_choices.front(); }
+
   void add_callback(const std::string &command, const std::function<void(Client &, const Message &)> callback);
 
   bool connect() { return sock_->connect(); }
@@ -44,11 +52,12 @@ class Client {
     sock_->write_lines(lines);
   }
 
+  void add_channel(const std::string &channel) { channels_.insert(channel); }
+  void rm_channel(const std::string &channel) { channels_.erase(channel); }
+
   const std::vector<std::function<void(Client &, const Message &)>> &callbacks_for_command(const std::string &command);
 
-  Message read() {
-    auto line = sock_->read_queue().pop();
-    std::cout << "RECV: " << line << std::endl;
-    return Message(line);
-  }
+  const std::set<std::string> &channels() { return channels_; }
+
+  Message read();
 };

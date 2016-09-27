@@ -7,6 +7,7 @@
 #include <boost/asio/use_future.hpp>
 #include <boost/bind.hpp>
 
+#include <array>
 #include <memory>
 #include <string>
 
@@ -18,7 +19,7 @@ class IrcSocket {
   // TODO(jsvana): actually use this
   bool ssl_;
 
-  boost::asio::streambuf response_;
+  std::array<char, 256> buffer_;
 
   boost::asio::io_service io_service_;
 

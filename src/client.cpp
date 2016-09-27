@@ -1,5 +1,6 @@
 #include "client.h"
 
+#include <algorithm>
 #include <iostream>
 
 void dispatcher(Client &client) {
@@ -7,7 +8,6 @@ void dispatcher(Client &client) {
     "USER jsvana 0.0.0.0 0.0.0.0 :jsvana test",
     "NICK " + client.nick_choices.front(),
   });
-  client.nick_choices.pop();
 
   while (true) {
     auto message = client.read();
@@ -40,10 +40,57 @@ const std::vector<std::function<void(Client &, const Message &)>> &Client::callb
   return iter->second;
 }
 
+void Client::setup_callbacks() {
+  // Nick in use
+  add_callback("433", [](Client &client, const Message &) {
+    if (client.nick_choices.empty()) {
+      throw "Out of nick choices";
+    }
+    client.nick_choices.pop();
+    client.write("NICK " + client.nick_choices.front());
+  });
+
+  add_callback("PING", [](Client &client, const Message &message) {
+    client.write("PONG " + message.params()[0]);
+  });
+
+  add_callback("JOIN", [](Client &client, const Message &message) {
+    if (message.prefix().entity() == client.nick()) {
+      client.add_channel(message.params()[0]);
+      std::cout << "Active channels:";
+      for (const auto &chan : client.channels()) {
+        std::cout << " " << chan;
+      }
+      std::cout << std::endl;
+    }
+  });
+}
+
 void Client::run() {
+  setup_callbacks();
+
   std::thread dispatcher_thread(dispatcher, std::ref(*this));
 
   sock_->run();
 
   dispatcher_thread.join();
+}
+
+Message Client::read() {
+  // Read in batches because not all lines will end in \r\n
+  std::size_t end;
+  std::string line;
+  do {
+    end = unfinished_line_.find("\r\n");
+    if (end == std::string::npos) {
+      unfinished_line_ += sock_->read_queue().pop();
+    }
+  } while (end == std::string::npos);
+
+  line = unfinished_line_.substr(0, end);
+  unfinished_line_ = unfinished_line_.substr(end + 2);
+
+  std::cout << "RECV " << line << std::endl;
+
+  return Message(line);
 }
