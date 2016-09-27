@@ -6,7 +6,7 @@ Currently only supports connecting to SSL-enabled IRC servers.
 
 Usage:
 
+    bfg9000 configure build
     cd build
-    cmake ..
-    make
+    ninja
     ./irc <servername> <port>

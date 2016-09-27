@@ -7,13 +7,10 @@ bool IrcSocket::connect() {
   boost::asio::ip::tcp::resolver::query query(host_, port_);
   auto iterator = resolver.resolve(query);
 
-  boost::asio::ssl::context ctx(io_service_, boost::asio::ssl::context::sslv23);
-
   // No verification!
-  ctx.set_verify_mode(boost::asio::ssl::context::verify_none);
+  ctx_.set_verify_mode(boost::asio::ssl::context::verify_none);
 
-  socket_ = std::make_unique<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>>(io_service_, ctx);
-  auto &socket = socket_->lowest_layer();
+  auto &socket = socket_.lowest_layer();
 
   boost::asio::ip::tcp::resolver::iterator end;
   boost::system::error_code error = boost::asio::error::host_not_found;
@@ -26,20 +23,20 @@ bool IrcSocket::connect() {
     return false;
   }
 
-  socket_->handshake(boost::asio::ssl::stream_base::client);
+  socket_.handshake(boost::asio::ssl::stream_base::client);
 
   return true;
 }
 
 void IrcSocket::run() {
-  socket_->async_read_some(boost::asio::buffer(buffer_), boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  socket_.async_read_some(boost::asio::buffer(buffer_), boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
   io_service_.run();
 }
 
 void IrcSocket::write(const std::string &message) {
   std::cout << "SEND " << message << std::endl;
-  boost::asio::write(*socket_, boost::asio::buffer(message + LINE_SEP));
+  boost::asio::write(socket_, boost::asio::buffer(message + LINE_SEP));
 }
 
 void IrcSocket::write_lines(const std::vector<std::string> &lines) {
@@ -56,10 +53,10 @@ void IrcSocket::read(const boost::system::error_code &error, std::size_t bytes) 
 
   std::string data(buffer_.data(), bytes);
   read_q_.push(data);
-  socket_->async_read_some(boost::asio::buffer(buffer_), boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  socket_.async_read_some(boost::asio::buffer(buffer_), boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 }
 
 void IrcSocket::close() {
-  socket_->lowest_layer().close();
+  socket_.lowest_layer().close();
   io_service_.stop();
 }

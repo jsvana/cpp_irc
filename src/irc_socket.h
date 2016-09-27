@@ -8,7 +8,6 @@
 #include <boost/bind.hpp>
 
 #include <array>
-#include <memory>
 #include <string>
 
 class IrcSocket {
@@ -22,13 +21,16 @@ class IrcSocket {
   std::array<char, 256> buffer_;
 
   boost::asio::io_service io_service_;
+  boost::asio::ssl::context ctx_;
 
-  std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>> socket_;
+  boost::asio::ssl::stream<boost::asio::ip::tcp::socket> socket_;
 
   const std::string LINE_SEP = "\r\n";
 
  public:
-  IrcSocket(const std::string &host, const std::string &port, bool ssl = false) : host_(host), port_(port), ssl_(ssl) {
+  IrcSocket(const std::string &host, const std::string &port, bool ssl = false)
+    : host_(host), port_(port), ssl_(ssl),
+      ctx_(io_service_, boost::asio::ssl::context::sslv23), socket_(io_service_, ctx_) {
   }
 
   bool connect();

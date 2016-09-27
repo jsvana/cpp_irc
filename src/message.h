@@ -1,42 +1,33 @@
 #pragma once
 
+#include <boost/optional.hpp>
+
 #include <string>
+#include <tuple>
 #include <vector>
-
-class MessagePrefix {
- private:
-  std::string entity_;
-  std::string user_;
-  std::string host_;
-
- public:
-  void set(const std::string &entity, const std::string &user, const std::string &host) {
-    entity_ = entity;
-    user_ = user;
-    host_ = host;
-  }
-
-  const std::string &entity() const { return entity_; }
-  const std::string &user() const { return user_; }
-  const std::string &host() const { return host_; }
-};
 
 class Message {
  private:
-  MessagePrefix prefix_;
-  std::string command_;
-  std::vector<std::string> params_;
 
-  std::string line_;
+  const std::tuple<boost::optional<std::string>, boost::optional<std::string>, boost::optional<std::string>, std::string, std::vector<std::string>> pieces_;
+
+  const std::tuple<boost::optional<std::string>, boost::optional<std::string>, boost::optional<std::string>, std::string, std::vector<std::string>> parse_line(const std::string& line);
 
  public:
-  Message(const std::string &line);
+  const std::string line;
+  const boost::optional<std::string> entity;
+  const boost::optional<std::string> user;
+  const boost::optional<std::string> host;
 
-  void add_param(const std::string &param) { params_.push_back(param); }
+  const std::string command;
+  const std::vector<std::string> params;
 
-  const MessagePrefix &prefix() const { return prefix_; }
-  const std::string &command() const { return command_; }
-  const std::vector<std::string> &params() const { return params_; }
-
-  const std::string &line() const { return line_; }
+  Message(const std::string &input_line)
+    : pieces_(parse_line(input_line)),
+      line(input_line),
+      entity(std::get<0>(pieces_)),
+      user(std::get<1>(pieces_)),
+      host(std::get<2>(pieces_)),
+      command(std::get<3>(pieces_)),
+      params(std::get<4>(pieces_)) {}
 };

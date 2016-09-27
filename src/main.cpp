@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
     }
 
     Client client(argv[1], argv[2]);
-    client.set_nick_choices({"jsvana", "jsvana_", "jsvana__"});
+    client.set_nick_choices({"starkbot", "starkbot_", "starkbot__"});
 
     if (!client.connect()) {
       std::cerr << "Error connecting to " << argv[1] << ":" << argv[2] << std::endl;

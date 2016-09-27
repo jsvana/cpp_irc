@@ -4,24 +4,28 @@
 #include "irc_socket.h"
 #include "message.h"
 
+#include <boost/optional.hpp>
+
 #include <functional>
-#include <map>
-#include <memory>
+#include <list>
 #include <queue>
 #include <set>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
+
+typedef std::function<void(const Message &)> MessageCallback;
 
 class Client {
  private:
-  std::unique_ptr<IrcSocket> sock_;
-  std::map<std::string, std::vector<std::function<void(Client &, const Message &)>>> callbacks_;
+  IrcSocket sock_;
+  std::unordered_map<std::string, std::vector<MessageCallback>> callbacks_;
 
-  const std::vector<std::function<void(Client &, const Message &)>> EMPTY_CALLBACKS;
+  std::list<std::string> pending_joins_;
 
-  std::map<std::string, Channel> channels_;
-  std::map<char, UserMode> prefixes_;
+  std::unordered_map<std::string, Channel> channels_;
+  std::unordered_map<char, UserMode> prefixes_;
 
   void setup_callbacks();
 
@@ -30,13 +34,13 @@ class Client {
  public:
   std::queue<std::string> nick_choices;
 
-  Client(const std::string &host, const std::string &port);
+  Client(const std::string &host, const std::string &port) : sock_(host, port) {}
 
-  IrcSocket &socket() { return *sock_; }
+  IrcSocket &socket() { return sock_; }
 
   void add_prefix_mapping(char prefix, UserMode mode) { prefixes_[prefix] = mode; }
 
-  const std::map<char, UserMode> &prefixes() const { return prefixes_; }
+  const std::unordered_map<char, UserMode> &prefixes() const { return prefixes_; }
 
   void set_nick_choices(const std::vector<std::string> &choices) {
     for (const auto &choice : choices) {
@@ -46,25 +50,25 @@ class Client {
 
   const std::string &nick() const { return nick_choices.front(); }
 
-  void add_callback(const std::string &command, const std::function<void(Client &, const Message &)> callback);
+  void add_callback(const std::string &command, const MessageCallback callback);
 
-  bool connect() { return sock_->connect(); }
+  bool connect() { return sock_.connect(); }
 
   void run();
 
-  void write(const std::string &message) { sock_->write(message); }
+  void write(const std::string &message) { sock_.write(message); }
 
   void write_lines(const std::vector<std::string> &lines) {
-    sock_->write_lines(lines);
+    sock_.write_lines(lines);
   }
 
   Channel *get_channel(const std::string &channel);
 
-  void add_channel(const std::string &channel) { channels_.emplace(std::make_pair(channel, Channel(channel))); }
+  void add_channel(const std::string &channel);
 
-  const std::vector<std::function<void(Client &, const Message &)>> &callbacks_for_command(const std::string &command);
+  boost::optional<const std::vector<MessageCallback> &> callbacks_for_command(const std::string &command);
 
-  const std::map<std::string, Channel> &channels() { return channels_; }
+  const std::unordered_map<std::string, Channel> &channels() const { return channels_; }
 
   void join(const std::string &channel);
   void nick(const std::string &nick);

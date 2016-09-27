@@ -1,22 +1,24 @@
 #include "message.h"
 
-Message::Message(const std::string &line) : line_(line) {
+#include <stdexcept>
+
+const std::tuple<boost::optional<std::string>, boost::optional<std::string>, boost::optional<std::string>, std::string, std::vector<std::string>> Message::parse_line(const std::string& line) {
   std::size_t i = 0, end;
 
   if (line == "") {
-    throw "Cannot parse empty line";
+    throw std::invalid_argument("Cannot parse empty line");
   }
 
   // Prefix format:
   // :entity!user@host
   // user and host are each optional
 
+  boost::optional<std::string> entity, user, host;
+
   // If there's a prefix, parse it
   if (line[i] == ':') {
     end = std::min(line.find(' ', i), line.find('!', i));
-    auto entity = line.substr(i + 1, end - i - 1);
-    std::string user = "";
-    std::string host = "";
+    entity = line.substr(i + 1, end - i - 1);
 
     i = end + 1;
     // Parse user
@@ -32,23 +34,25 @@ Message::Message(const std::string &line) : line_(line) {
       host = line.substr(i, end - i);
       i = end + 1;
     }
-
-    prefix_.set(entity, user, host);
   }
 
   end = line.find(' ', i);
-  command_ = line.substr(i, end - i);
+  auto command = line.substr(i, end - i);
   i = end + 1;
+
+  std::vector<std::string> parsed_params;
 
   while (i < line.length()) {
     // Last param
     if (line[i] == ':') {
-      params_.push_back(line.substr(i + 1));
+      parsed_params.push_back(line.substr(i + 1));
       break;
     }
 
     end = line.find(' ', i);
-    params_.push_back(line.substr(i, end - i));
+    parsed_params.push_back(line.substr(i, end - i));
     i = end + 1;
   }
+
+  return std::make_tuple(entity, user, host, command, parsed_params);
 }
