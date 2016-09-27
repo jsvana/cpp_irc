@@ -10,6 +10,7 @@ int main(int argc, char* argv[]) {
     }
 
     Client client(argv[1], argv[2]);
+    client.add_callback("433", [](Client &) { std::cout << "GOT A CALLBACK" << std::endl; });
     if (!client.connect()) {
       std::cerr << "Error connecting to " << argv[1] << ":" << argv[2] << std::endl;
       return 1;
