@@ -21,6 +21,7 @@ class Client {
   const std::vector<std::function<void(Client &, const Message &)>> EMPTY_CALLBACKS;
 
   std::map<std::string, Channel> channels_;
+  std::map<char, UserMode> prefixes_;
 
   void setup_callbacks();
 
@@ -32,6 +33,10 @@ class Client {
   Client(const std::string &host, const std::string &port);
 
   IrcSocket &socket() { return *sock_; }
+
+  void add_prefix_mapping(char prefix, UserMode mode) { prefixes_[prefix] = mode; }
+
+  const std::map<char, UserMode> &prefixes() const { return prefixes_; }
 
   void set_nick_choices(const std::vector<std::string> &choices) {
     for (const auto &choice : choices) {

@@ -42,7 +42,43 @@ const std::vector<std::function<void(Client &, const Message &)>> &Client::callb
 
 void Client::setup_callbacks() {
   // ISUPPORT (doubling as connected)
-  add_callback("005", [](Client &client, const Message &) {
+  add_callback("005", [](Client &client, const Message &message) {
+    // Parse valid user prefixes for the server
+    for (const auto &param : message.params()) {
+      if (param.find("PREFIX=") != 0) {
+        continue;
+      }
+      std::size_t i = param.find('(') + 1;
+      std::size_t j = param.find(')') + 1;
+
+      while (param[i] != ')') {
+        UserMode mode;
+        switch (param[i]) {
+        case 'q':
+          mode = MODE_OWNER;
+          break;
+        case 'a':
+          mode = MODE_ADMIN;
+          break;
+        case 'o':
+          mode = MODE_OP;
+          break;
+        case 'h':
+          mode = MODE_HALFOP;
+          break;
+        case 'v':
+          mode = MODE_VOICE;
+          break;
+        default:
+          mode = MODE_UNKNOWN;
+          break;
+        }
+        client.add_prefix_mapping(param[j], mode);
+        i += 1;
+        j += 1;
+      }
+    }
+
     client.write("JOIN #encoded-test");
   });
 
@@ -80,22 +116,32 @@ void Client::setup_callbacks() {
   add_callback("353", [](Client &client, const Message &message) {
     auto channel = client.get_channel(message.params()[2]);
     auto nicks_str = message.params()[3];
-    std::set<std::string> nicks;
 
     std::size_t i = 0;
     std::size_t end;
     while (i < nicks_str.length()) {
       end = nicks_str.find(' ', i);
-      nicks.insert(nicks_str.substr(i, end - i));
+      auto nick = nicks_str.substr(i, end - i);
       i = end + 1;
+
+      bool added = false;
+      for (const auto &p : client.prefixes()) {
+        if (nick[0] == p.first) {
+          channel->add_user(nick.substr(1), p.second);
+          added = true;
+        }
+      }
+
+      if (!added) {
+        channel->add_user(nick, MODE_UNKNOWN);
+      }
     }
-    channel->add_nicks(nicks);
 
     std::cout << "CHANNEL " << channel->name() << ":" << std::endl;
     std::cout << "  TOPIC: " << channel->topic() << std::endl;
     std::cout << "  NICKS:";
-    for (const auto &nick : channel->nicks()) {
-      std::cout << " " << nick;
+    for (const auto &user : channel->users()) {
+      std::cout << " " << user.first;
     }
     std::cout << std::endl;
   });

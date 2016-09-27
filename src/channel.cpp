@@ -1,7 +1,6 @@
 #include "channel.h"
 
-void Channel::add_nicks(const std::set<std::string> &nicks) {
-  for (const auto &nick : nicks) {
-    nicks_.insert(nick);
-  }
+void Channel::add_user(const std::string &nick, UserMode mode) {
+  users_[nick].nick = nick;
+  users_[nick].mode = mode;
 }
