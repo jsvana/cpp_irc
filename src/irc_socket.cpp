@@ -57,7 +57,7 @@ void IrcSocket::read(const boost::system::error_code &error, std::size_t) {
   std::istream response_stream(&response_);
   std::string line;
   while (std::getline(response_stream, line)) {
-    read_q_->push(line);
+    read_q_.push(line);
   }
   boost::asio::async_read_until(*socket_, response_, "\r\n", boost::bind(&IrcSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 }

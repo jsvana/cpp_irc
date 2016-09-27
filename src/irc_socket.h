@@ -14,7 +14,7 @@ class IrcSocket {
  private:
   std::string host_;
   std::string port_;
-  lockless_queue<std::string> *read_q_;
+  lockless_queue<std::string> read_q_;
   // TODO(jsvana): actually use this
   bool ssl_;
 
@@ -27,7 +27,7 @@ class IrcSocket {
   const std::string LINE_SEP = "\r\n";
 
  public:
-  IrcSocket(const std::string &host, const std::string &port, lockless_queue<std::string> *read_q, bool ssl = false) : host_(host), port_(port), read_q_(read_q), ssl_(ssl) {
+  IrcSocket(const std::string &host, const std::string &port, bool ssl = false) : host_(host), port_(port), ssl_(ssl) {
   }
 
   bool connect();
@@ -42,7 +42,7 @@ class IrcSocket {
 
   void close();
 
-  lockless_queue<std::string> *read_queue() {
+  lockless_queue<std::string> &read_queue() {
     return read_q_;
   }
 };
