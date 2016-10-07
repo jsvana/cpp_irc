@@ -11,12 +11,14 @@ executable(
       "-pedantic",
       "-Wno-deprecated-declarations",
       "-std=c++14",
+      "-ggdb",
     ],
     packages=[
       boost_package("system"),
+
       system_package("ssl"),
       system_package("crypto"),
+      system_package("ncurses"),
       system_package("pthread"),
-      system_package("boost_system", kind="static"),
     ],
 )

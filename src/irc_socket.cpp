@@ -1,7 +1,5 @@
 #include "irc_socket.h"
 
-#include <iostream>
-
 bool IrcSocket::connect() {
   boost::asio::ip::tcp::resolver resolver(io_service_);
   boost::asio::ip::tcp::resolver::query query(host_, port_);
@@ -35,7 +33,6 @@ void IrcSocket::run() {
 }
 
 void IrcSocket::write(const std::string &message) {
-  std::cout << "SEND " << message << std::endl;
   boost::asio::write(socket_, boost::asio::buffer(message + LINE_SEP));
 }
 
