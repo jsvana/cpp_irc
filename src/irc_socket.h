@@ -30,7 +30,7 @@ class IrcSocket {
  public:
   IrcSocket(const std::string &host, const std::string &port, bool ssl = false)
     : host_(host), port_(port), ssl_(ssl),
-      ctx_(io_service_, boost::asio::ssl::context::sslv23), socket_(io_service_, ctx_) {
+      ctx_(boost::asio::ssl::context::sslv23), socket_(io_service_, ctx_) {
   }
 
   bool connect();
