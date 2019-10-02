@@ -2,7 +2,7 @@
 
 #include "channel.h"
 #include "irc_socket.h"
-#include "lockless_queue.h"
+#include "queue.h"
 #include "message.h"
 
 #include <boost/optional.hpp>
@@ -24,7 +24,7 @@ class Client {
   IrcSocket sock_;
   std::unordered_map<std::string, std::vector<MessageCallback>> callbacks_;
 
-  lockless_queue<std::string> message_lines_;
+  queue<std::string> message_lines_;
 
   std::list<std::string> pending_joins_;
 

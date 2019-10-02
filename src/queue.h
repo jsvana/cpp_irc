@@ -5,7 +5,7 @@
 #include <queue>
 
 template<typename T>
-class lockless_queue {
+class queue {
  private:
   std::mutex q_lock_;
   std::condition_variable cv_;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lockless_queue.h"
+#include "queue.h"
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -14,7 +14,7 @@ class IrcSocket {
  private:
   std::string host_;
   std::string port_;
-  lockless_queue<std::string> read_q_;
+  queue<std::string> read_q_;
   // TODO(jsvana): actually use this
   bool ssl_;
 
@@ -45,7 +45,7 @@ class IrcSocket {
 
   void close();
 
-  lockless_queue<std::string> &read_queue() {
+  queue<std::string> &read_queue() {
     return read_q_;
   }
 };
