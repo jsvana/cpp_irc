@@ -1,0 +1,24 @@
+def join_channels(Message m) {
+  print("Attempting join");
+
+  join("#encoded-test");
+}
+
+def joined_channel(Message m) {
+  print("Joined " + m.params[1]);
+  channel_message("#encoded-test", "chai test");
+}
+
+def init() {
+  print("Initializing chai");
+
+  add_callback("005", join_channels);
+  add_callback("451", joined_channel);
+}
+
+def post_connect() {
+  print("POST CONNECT");
+
+  write("USER jsvana 0.0.0.0 0.0.0.0 :jsvana test");
+  nick("starkbot");
+}
