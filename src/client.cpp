@@ -114,6 +114,16 @@ Channel *Client::get_channel(const std::string &channel) {
   return &channels_.find(channel)->second;
 }
 
+bool Client::has_channel(const std::string &channel) {
+  auto iter = channels_.find(channel);
+  return iter != channels_.end();
+}
+
+Channel *Client::find_channel(const std::string &channel) {
+  auto iter = channels_.find(channel);
+  return &iter->second;
+}
+
 void Client::join(const std::string &channel) {
   // Make sure we don't double join
   if (channels_.find(channel) != channels_.end()) {

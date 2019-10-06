@@ -9,16 +9,27 @@ def joined_channel(Message m) {
   channel_message("#encoded-test", "chai test");
 }
 
+def list_users(Message m, Command c) {
+  var chan = find_channel(c.origin);
+
+  var output = "";
+  for (pair : chan.users) {
+    output += "${pair.second.nick} ";
+  }
+
+  channel_message(c.origin, output);
+}
+
 def init() {
   print("Initializing chai");
 
   add_callback("005", join_channels);
   add_callback("451", joined_channel);
+
+  add_command_callback("list", list_users);
 }
 
 def post_connect() {
-  print("POST CONNECT");
-
   write("USER jsvana 0.0.0.0 0.0.0.0 :jsvana test");
   nick("starkbot");
 }

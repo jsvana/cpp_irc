@@ -71,6 +71,8 @@ public:
   }
 
   Channel *get_channel(const std::string &channel);
+  bool has_channel(const std::string &channel);
+  Channel *find_channel(const std::string &channel);
 
   void add_channel(const std::string &channel);
 

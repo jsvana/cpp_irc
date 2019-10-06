@@ -1,4 +1,6 @@
 #include "bot.h"
+
+#include "channel.h"
 #include "message.h"
 
 #include <chaiscript/chaiscript.hpp>
@@ -78,13 +80,23 @@ void add_command_callback(const std::string &command,
   callbacks_[command].push_back(callback);
 }
 
+bool has_channel(const std::string &channel) {
+  return client_->has_channel(channel);
+}
+
+Channel *find_channel(const std::string &channel) {
+  return client_->find_channel(channel);
+}
+
 void init_chaiscript() {
   // chai_.add(chaiscript::extras::string_methods::bootstrap());
 
   // This allows us to use vectors of strings properly in
   // scripts.
   chai_.add(chaiscript::bootstrap::standard_library::vector_type<
-            std::vector<std::string>>("VecString"));
+            std::vector<std::string>>("StringVec"));
+  chai_.add(chaiscript::bootstrap::standard_library::map_type<
+            std::map<std::string, User>>("UserMap"));
 
   chai_.add(chaiscript::fun(&nick), "nick");
   chai_.add(chaiscript::fun(&join), "join");
@@ -92,6 +104,8 @@ void init_chaiscript() {
   chai_.add(chaiscript::fun(&channel_message), "channel_message");
   chai_.add(chaiscript::fun(&add_callback), "add_callback");
   chai_.add(chaiscript::fun(&add_command_callback), "add_command_callback");
+  chai_.add(chaiscript::fun(&has_channel), "has_channel");
+  chai_.add(chaiscript::fun(&find_channel), "find_channel");
 
   chai_.add(chaiscript::user_type<Message>(), "Message");
   chai_.add(chaiscript::fun(&Message::command), "command");
@@ -100,6 +114,15 @@ void init_chaiscript() {
   chai_.add(chaiscript::user_type<Command>(), "Command");
   chai_.add(chaiscript::fun(&Command::origin), "origin");
   chai_.add(chaiscript::fun(&Command::command), "command");
+
+  chai_.add(chaiscript::user_type<Channel>(), "Channel");
+  chai_.add(chaiscript::fun(&Channel::name), "name");
+  chai_.add(chaiscript::fun(&Channel::topic), "topic");
+  chai_.add(chaiscript::fun(&Channel::users), "users");
+
+  chai_.add(chaiscript::user_type<User>(), "User");
+  chai_.add(chaiscript::fun(&User::nick), "nick");
+  // TODO(jsvana): add modes
 }
 
 void init_callbacks() {
